@@ -5,19 +5,12 @@ const bodyParser = require("body-parser");
 const app = express();
 const PORT = 5000;
 
-// Middleware
-app.use(cors()); // allow frontend requests
-app.use(bodyParser.json());
+// Routes
+const userRoutes = require('./routes/userRoutes');
 
-// route
-app.get("/api/hello", (req, res) => {
-    res.json({ message: "backend hello" });
-});
 
-app.post("/api/data", (req, res) => {
-    console.log("Received:", req.body);
-    res.json({ success: true, data: req.body });
-});
+app.use('/users', userRoutes);
+
 
 app.listen(PORT, () => {
     console.log(`server running at http://localhost:${PORT}`);

@@ -9,8 +9,8 @@ module.exports = {
     client: 'mysql2',
     connection: {
       host: '127.0.0.1',
-      user: 'your_user',
-      password: 'your_password',
+      user: 'root',
+      // password: 'your_password',
       database: 'smartplant_sarawak'
     },
     migrations: {
