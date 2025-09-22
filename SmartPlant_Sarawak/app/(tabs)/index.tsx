@@ -1,98 +1,252 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
+import React, { useState } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
 
-export default function HomeScreen() {
+const API_BASE_URL = 'http://localhost:5000';
+
+export default function LoginTestScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [token, setToken] = useState('');
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: 'Test User', email, password }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        Alert.alert('Success', 'User registered successfully!');
+      } else {
+        Alert.alert('Error', data.message || 'Registration failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setToken(data.token);
+        Alert.alert('Success', 'Login successful! Token saved.');
+      } else {
+        Alert.alert('Error', data.message || 'Login failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGetProfile = async () => {
+    if (!token) {
+      Alert.alert('Error', 'Please login first to get a token');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setUserProfile(data.data);
+        Alert.alert('Success', 'Profile retrieved successfully!');
+      } else {
+        Alert.alert('Error', data.message || 'Failed to get profile');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearAll = () => {
+    setEmail('');
+    setPassword('');
+    setToken('');
+    setUserProfile(null);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <ThemedView style={styles.container}>
+      <ThemedText type="title" style={styles.title}>JWT Login Test</ThemedText>
+      
+      <ThemedView style={styles.formContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.registerButton]} 
+          onPress={handleRegister}
+          disabled={loading}
+        >
+          <ThemedText style={styles.buttonText}>
+            {loading ? 'Loading...' : 'Register'}
+          </ThemedText>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.loginButton]} 
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <ThemedText style={styles.buttonText}>
+            {loading ? 'Loading...' : 'Login'}
+          </ThemedText>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.profileButton]} 
+          onPress={handleGetProfile}
+          disabled={loading || !token}
+        >
+          <ThemedText style={styles.buttonText}>
+            {loading ? 'Loading...' : 'Get Profile'}
+          </ThemedText>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.clearButton]} 
+          onPress={clearAll}
+        >
+          <ThemedText style={styles.buttonText}>Clear All</ThemedText>
+        </TouchableOpacity>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {token && (
+        <ThemedView style={styles.tokenContainer}>
+          <ThemedText type="subtitle">Current Token:</ThemedText>
+          <ThemedText style={styles.tokenText}>{token.substring(0, 50)}...</ThemedText>
+        </ThemedView>
+      )}
+
+      {userProfile && (
+        <ThemedView style={styles.profileContainer}>
+          <ThemedText type="subtitle">User Profile:</ThemedText>
+          <ThemedText>ID: {userProfile.id}</ThemedText>
+          <ThemedText>Email: {userProfile.email}</ThemedText>
+        </ThemedView>
+      )}
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  title: {
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  formContainer: {
+    gap: 15,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  button: {
+    padding: 15,
+    borderRadius: 8,
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  registerButton: {
+    backgroundColor: '#4CAF50',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  loginButton: {
+    backgroundColor: '#2196F3',
+  },
+  profileButton: {
+    backgroundColor: '#FF9800',
+  },
+  clearButton: {
+    backgroundColor: '#f44336',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tokenContainer: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  tokenText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    marginTop: 5,
+  },
+  profileContainer: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#e8f5e8',
+    borderRadius: 8,
   },
 });

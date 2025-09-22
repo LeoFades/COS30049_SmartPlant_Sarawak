@@ -26,26 +26,37 @@ class UserController {
     static async login(req, res) {
         try {
             const { email, password } = req.body;
+            console.log('Login attempt for email:', email);
+            
             const user = await User.findByEmail(email);
+            console.log('User found in database:', user ? { user_id: user.user_id, name: user.name, email: user.email } : 'No user found');
 
             if (!user) {
+                console.log('Login failed: User not found');
                 return res.status(400).json({ success: false, message: "Invalid credentials" });
             }
 
             const match = await bcrypt.compare(password, user.password);
+            console.log('Password match:', match);
+            
             if (!match) {
+                console.log('Login failed: Invalid password');
                 return res.status(400).json({ success: false, message: "Invalid credentials" });
             }
 
+            const tokenPayload = { id: user.user_id, email: user.email };
+            console.log('Creating JWT token with payload:', tokenPayload);
+            
             const token = jwt.sign(
-                { id: user.user_id, email: user.email },
+                tokenPayload,
                 JWT_SECRET,
                 { expiresIn: "1d" }
             );
 
+            console.log('Login successful, token generated');
             res.json({ success: true, token });
         } catch (error) {
-            console.error(error);
+            console.error('Login error:', error);
             res.status(500).json({ success: false, message: "Error logging in" });
         }
     }
